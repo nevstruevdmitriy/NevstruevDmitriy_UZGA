@@ -1,6 +1,12 @@
-#include <MyClient.h>
+#include <client.h>
 
-MyClient::Myclient(const QString& host, int port, QWidget* parrent) : QWidget(parrent),
+#include <QTcpSocket>
+#include <QTime>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QLabel>
+
+MyClient::MyClient(const QString& host, int port, QWidget* parrent) : QWidget(parrent),
 																	  m_nextBlockSize(0) {
 	m_socket = new QTcpSocket(this);
 
@@ -9,11 +15,11 @@ MyClient::Myclient(const QString& host, int port, QWidget* parrent) : QWidget(pa
 	connect(m_socket, SIGNAL(connected()), SLOT(slotConnected()));
 	connect(m_socket, SIGNAL(readyRead()), SLOT(slotReadyRead()));
 
-	connect(m_socket, SIGNAL(error(QABstractSocket::SocketError)),
+	connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)),
 			this, SLOT(slotError(QAbstractSocket::SocketError)));
 
 	m_info = new QTextEdit;
-	M_input = new QLineEdit;
+	m_input = new QLineEdit;
 
 	connect(m_input, SIGNAL(returnPressed()),
 			this, SLOT(slotSendToServer()));
@@ -21,7 +27,7 @@ MyClient::Myclient(const QString& host, int port, QWidget* parrent) : QWidget(pa
 	m_info->setReadOnly(true);
 
 	QPushButton* push = new QPushButton("&Send");
-	connect(push, SIGNAL(clicked), SLOT(slotSendToServer()));
+	connect(push, SIGNAL(clicked()), SLOT(slotSendToServer()));
 
 	QVBoxLayout* layout = new QVBoxLayout;
 	layout->addWidget(new QLabel("<H1>Client</H1>"));
@@ -57,23 +63,23 @@ void MyClient::slotReadyRead() {
 	}
 }
 
-void MyClient::slotError(QAbstractSocket::socket error) {
+void MyClient::slotError(QAbstractSocket::SocketError error) {
 	QString strError = "Error: " + 
 			(error == QAbstractSocket::HostNotFoundError ? "The host was not found." :
 			error == QAbstractSocket::RemoteHostClosedError ? "The remote host is closed" :
 			error == QAbstractSocket::ConnectionRefusedError ? "The connection was refused." :
 			QString(m_socket->errorString()));
 
-	m_info->appedn(strError);
+	m_info->append(strError);
 }
 
-void MyClient::slotSendServer() {
+void MyClient::slotSendToServer() {
 	QByteArray block;
 	QDataStream out(&block, QIODevice::WriteOnly);
 	out.setVersion(QDataStream::Qt_4_2);
 
 	out << quint16(0) << QTime::currentTime() << m_input->text();
-	out << quint16(arrBlock.size() - sizeof(quint16));
+	out << quint16(block.size() - sizeof(quint16));
 
 	m_socket->write(block);
 	m_input->setText("");

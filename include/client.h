@@ -1,15 +1,15 @@
-#pragma once;
+#pragma once
 
 #include <QTextEdit>
 #include <QTcpSocket>
-
-class QTextEdit;
-class QLineEdit;
+#include <QTextEdit>
+#include <QLineEdit>
 
 class MyClient : public QWidget {
 Q_OBJECT
 public:
-	MyClient(const QString& host, int port, QWidget* parent);
+	MyClient(const QString& host, int port, QWidget* parent = 0);
+	~MyClient() override = default;
 
 private slots:
 	void slotReadyRead();
@@ -22,4 +22,4 @@ private:
 	QTextEdit* m_info;
 	QLineEdit* m_input;
 	quint16 m_nextBlockSize;
-}
+};

@@ -1,23 +1,24 @@
-#pragma once;
+#pragma once
 
 #include <QWidget>
-
-class QTcpServer;
-class QTextEdit;
-class QTcpSocket;
+#include <QTcpServer>
+#include <QTextEdit>
+#include <QTcpSocket>
 
 class MyServer : public QWidget {
 Q_OBJECT
 public:
-	MyServer(int port, QWidget* parent);
-	
+	MyServer(int port, QWidget* parent = 0);
+	~MyServer() override = default;
+
 private slots: 
 	virtual void slotNewConnection();
-	void slotReadConnect();
+	void slotReadClient();
+
 private:
-	void sendMessage(QTcpSocket* socket, const QString& message);
+	void sendToClient(QTcpSocket* socket, const QString& message);
 
 	QTcpServer* m_server;
 	QTextEdit* m_status;
-	quint_16 m_nextBlockSize;
+	quint16 m_nextBlockSize;
 };

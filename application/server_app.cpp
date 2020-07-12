@@ -1,4 +1,4 @@
-#include <MyServer.h>
+#include <server.h>
 
 #include <QApplication>
 

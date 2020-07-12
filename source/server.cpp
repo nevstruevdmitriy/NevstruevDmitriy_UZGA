@@ -1,10 +1,17 @@
-#include <MyServer.h>
+#include <server.h>
 
-MyServer::MyServer(int port, QWidget* parent) : QWidget(parrent),
+#include <QHostAddress>
+#include <QMessageBox>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QTime>
+#include <QIODevice>
+
+MyServer::MyServer(int port, QWidget* parent) : QWidget(parent),
 												m_nextBlockSize(0) {
 	m_server = new QTcpServer(this);
 	
-	if (!m_server->listen(QHostAdderss::Any, prot)) {
+	if (!m_server->listen(QHostAddress::Any, port)) {
 		QMessageBox::critical(0, "Server Error", "Unable the server: " + m_server->errorString());
 		m_server->close();
 		return;
@@ -24,11 +31,11 @@ MyServer::MyServer(int port, QWidget* parent) : QWidget(parrent),
 void MyServer::slotNewConnection() {
 	QTcpSocket* client = m_server->nextPendingConnection();
 	
-	connect(client, SIGNAL(disconected()),
+	connect(client, SIGNAL(disconnected()),
 			client, SLOT(deleteLater()));
 
 	connect(client, SIGNAL(readyRead()),
-			this, SLOT(slotReadClient));
+			this, SLOT(slotReadClient()));
 
 	sendToClient(client, "Connected!");
 }
@@ -39,7 +46,7 @@ void MyServer::slotReadClient() {
 	in.setVersion(QDataStream::Qt_4_2);
 
 	while (true) {
-		if (!m_NextBlockSize) {
+		if (!m_nextBlockSize) {
 			if (client->bytesAvailable() < sizeof(quint16)) {
 				break;
 			}
@@ -47,7 +54,8 @@ void MyServer::slotReadClient() {
 			in >> m_nextBlockSize;
 		}
 
-		if (client->bytesAvailabele() < m_nextBlockSize) {
+		if (client->bytesAvailable() < m_nextBlockSize) {
+			m_nextBlockSize = 0;
 			break;
 		}
 
@@ -67,13 +75,13 @@ void MyServer::slotReadClient() {
 void MyServer::sendToClient(QTcpSocket* client, const QString& message) {
 	QByteArray block;
 
-	QDataStream out(&block, QIODevice::writeOnly);
+	QDataStream out(&block, QIODevice::WriteOnly);
 	out.setVersion(QDataStream::Qt_4_2);
 	out << quint16(0) << QTime::currentTime() << message;
 
 	out.device()->seek(0);
 
-	out << quint16(arrBlock.size() - sizeof(quint16));
+	out << quint16(block.size() - sizeof(quint16));
 
 	client->write(block);
 }

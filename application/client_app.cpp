@@ -1,4 +1,4 @@
-#include <MyClient.h>
+#include <client.h>
 #include <QApplication>
 
 int main(int argc, char** argv) {

@@ -25,6 +25,7 @@ private slots:
 
 private:
 	QString numberToName(int ind);
+	QByteArray getHash(const QString& message);
 
 	QTcpServer* m_server;
 	QTextEdit* m_status;

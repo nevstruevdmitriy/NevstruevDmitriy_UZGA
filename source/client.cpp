@@ -6,29 +6,26 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QCryptographicHash>
 
 MyClient::MyClient(const QString& host, int port, QWidget* parrent) : QWidget(parrent),
 																	  m_nextBlockSize(0) {
 	m_socket = new QTcpSocket(this);
+	m_info = new QTextEdit;
+	m_input = new QLineEdit;
+	QPushButton* push = new QPushButton("&Send");
 
 	m_socket->connectToHost(host, port);
 
 	connect(m_socket, SIGNAL(connected()), SLOT(slotConnected()));
 	connect(m_socket, SIGNAL(readyRead()), SLOT(slotReadyRead()));
-
+	connect(push, SIGNAL(clicked()), SLOT(slotSendToServerMessage()));
 	connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)),
 			this, SLOT(slotError(QAbstractSocket::SocketError)));
-
-	m_info = new QTextEdit;
-	m_input = new QLineEdit;
-
 	connect(m_input, SIGNAL(returnPressed()),
 			this, SLOT(slotSendToServerMessage()));
 
 	m_info->setReadOnly(true);
-
-	QPushButton* push = new QPushButton("&Send");
-	connect(push, SIGNAL(clicked()), SLOT(slotSendToServerMessage()));
 
 	m_label = new QLabel("<H1>Connecting...</H1>");
 
@@ -41,6 +38,7 @@ MyClient::MyClient(const QString& host, int port, QWidget* parrent) : QWidget(pa
 }
 
 void MyClient::slotReadyRead() {
+	QByteArray hash;
 	QDataStream in(m_socket);
 	in.setVersion(QDataStream::Qt_4_2);
 
@@ -60,17 +58,20 @@ void MyClient::slotReadyRead() {
 		QDateTime time;
 		QString message;
 
-		in >> message;
+		in >> message >> hash;
 
-		m_info->append(message);
+		m_info->append("From server:\t" + message);
 		m_nextBlockSize = 0;
 		
 		if (message[0] == 'C') {
 			m_label->setText("<H1>" + message + "</H1>");
 		}
+
+		if (hash != getHash(message)) {
+			m_info->append("Error: wrong hash!");
+		}
 	}
 }
-
 
 void MyClient::slotError(QAbstractSocket::SocketError error) {
 	QString strError = "Error: " + 
@@ -97,14 +98,18 @@ void MyClient::sendToServer(const QString& message, bool isMessage) {
 	out.setVersion(QDataStream::Qt_4_2);
 
 	out << quint16(0) << isMessage << message;
-	
 	if (isMessage) {
 		out << QDateTime::currentDateTime();
 	}
+	out << getHash(message.toLocal8Bit());
+
+	out.device()->seek(0);
 
 	out << quint16(block.size() - sizeof(quint16));
 
 	m_socket->write(block);
+
+	m_info->append("From client:\t" + message);
 }
 
 void MyClient::slotConnected() {
@@ -116,4 +121,8 @@ void MyClient::slotConnected() {
             this, SLOT(slotSendToServerInfo(QTcpSocket*, const QString&)));
 	
 	telemetry->start();
+}
+
+QByteArray MyClient::getHash(const QString& message) {
+	return QCryptographicHash::hash(message.toLocal8Bit(), QCryptographicHash::Md5);
 }

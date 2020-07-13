@@ -22,6 +22,8 @@ private slots:
 
 private:
 	void sendToServer(const QString& message, bool isMessage);
+	QByteArray getHash(const QString& message);
+	
 	QTcpSocket* m_socket;
 	QTextEdit* m_info;
 	QLineEdit* m_input;

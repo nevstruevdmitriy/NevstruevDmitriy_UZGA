@@ -5,6 +5,7 @@
 #include <QTextEdit>
 #include <QLineEdit>
 #include <QString>
+#include <QLabel>
 
 class MyClient : public QWidget {
 Q_OBJECT
@@ -16,12 +17,14 @@ private slots:
 	void slotReadyRead();
 	void slotError(QAbstractSocket::SocketError);
 	void slotSendToServerMessage();
-	void slotSendToServerInfo(QTcpSocket* server, const QString& message);
+	void slotSendToServerInfo(QTcpSocket*, const QString& message);
 	void slotConnected();
 
 private:
+	void sendToServer(const QString& message, bool isMessage);
 	QTcpSocket* m_socket;
 	QTextEdit* m_info;
 	QLineEdit* m_input;
+	QLabel* m_label;
 	quint16 m_nextBlockSize;
 };

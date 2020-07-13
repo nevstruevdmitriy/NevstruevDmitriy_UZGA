@@ -30,8 +30,10 @@ MyClient::MyClient(const QString& host, int port, QWidget* parrent) : QWidget(pa
 	QPushButton* push = new QPushButton("&Send");
 	connect(push, SIGNAL(clicked()), SLOT(slotSendToServerMessage()));
 
+	m_label = new QLabel("<H1>Connecting...</H1>");
+
 	QVBoxLayout* layout = new QVBoxLayout;
-	layout->addWidget(new QLabel("<H1>Client</H1>"));
+	layout->addWidget(m_label);
 	layout->addWidget(m_info);
 	layout->addWidget(m_input);
 	layout->addWidget(push);
@@ -58,12 +60,17 @@ void MyClient::slotReadyRead() {
 		QDateTime time;
 		QString message;
 
-		in >> time >> message;
+		in >> message;
 
-		m_info->append(time.toString() + " " + message);
+		m_info->append(message);
 		m_nextBlockSize = 0;
+		
+		if (message[0] == 'C') {
+			m_label->setText("<H1>" + message + "</H1>");
+		}
 	}
 }
+
 
 void MyClient::slotError(QAbstractSocket::SocketError error) {
 	QString strError = "Error: " + 
@@ -76,19 +83,28 @@ void MyClient::slotError(QAbstractSocket::SocketError error) {
 }
 
 void MyClient::slotSendToServerMessage() {
-	slotSendToServerInfo(m_socket, m_input->text());
+	sendToServer(m_input->text(), true);
 	m_input->setText("");	
 }
 
-void MyClient::slotSendToServerInfo(QTcpSocket* server, const QString& message) {
+void MyClient::slotSendToServerInfo(QTcpSocket*, const QString& message) {
+	sendToServer(message, false);
+}
+
+void MyClient::sendToServer(const QString& message, bool isMessage) {
 	QByteArray block;
 	QDataStream out(&block, QIODevice::WriteOnly);
 	out.setVersion(QDataStream::Qt_4_2);
 
-	out << quint16(0) << QDateTime::currentDateTime() << message;
+	out << quint16(0) << isMessage << message;
+	
+	if (isMessage) {
+		out << QDateTime::currentDateTime();
+	}
+
 	out << quint16(block.size() - sizeof(quint16));
 
-	server->write(block);
+	m_socket->write(block);
 }
 
 void MyClient::slotConnected() {

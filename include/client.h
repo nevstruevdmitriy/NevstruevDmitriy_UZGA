@@ -4,6 +4,7 @@
 #include <QTcpSocket>
 #include <QTextEdit>
 #include <QLineEdit>
+#include <QString>
 
 class MyClient : public QWidget {
 Q_OBJECT
@@ -14,7 +15,8 @@ public:
 private slots:
 	void slotReadyRead();
 	void slotError(QAbstractSocket::SocketError);
-	void slotSendToServer();
+	void slotSendToServerMessage();
+	void slotSendToServerInfo(QTcpSocket* server, const QString& message);
 	void slotConnected();
 
 private:

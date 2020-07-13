@@ -1,7 +1,8 @@
 #include <client.h>
+#include <telemetry.h>
 
 #include <QTcpSocket>
-#include <QTime>
+#include <QDateTime>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -22,12 +23,12 @@ MyClient::MyClient(const QString& host, int port, QWidget* parrent) : QWidget(pa
 	m_input = new QLineEdit;
 
 	connect(m_input, SIGNAL(returnPressed()),
-			this, SLOT(slotSendToServer()));
+			this, SLOT(slotSendToServerMessage()));
 
 	m_info->setReadOnly(true);
 
 	QPushButton* push = new QPushButton("&Send");
-	connect(push, SIGNAL(clicked()), SLOT(slotSendToServer()));
+	connect(push, SIGNAL(clicked()), SLOT(slotSendToServerMessage()));
 
 	QVBoxLayout* layout = new QVBoxLayout;
 	layout->addWidget(new QLabel("<H1>Client</H1>"));
@@ -50,10 +51,11 @@ void MyClient::slotReadyRead() {
 		}
 
 		if (m_socket->bytesAvailable() < m_nextBlockSize) {
+			m_nextBlockSize = 0;
 			break;
 		}
 
-		QTime time;
+		QDateTime time;
 		QString message;
 
 		in >> time >> message;
@@ -73,18 +75,29 @@ void MyClient::slotError(QAbstractSocket::SocketError error) {
 	m_info->append(strError);
 }
 
-void MyClient::slotSendToServer() {
+void MyClient::slotSendToServerMessage() {
+	slotSendToServerInfo(m_socket, m_input->text());
+	m_input->setText("");	
+}
+
+void MyClient::slotSendToServerInfo(QTcpSocket* server, const QString& message) {
 	QByteArray block;
 	QDataStream out(&block, QIODevice::WriteOnly);
 	out.setVersion(QDataStream::Qt_4_2);
 
-	out << quint16(0) << QTime::currentTime() << m_input->text();
+	out << quint16(0) << QDateTime::currentDateTime() << message;
 	out << quint16(block.size() - sizeof(quint16));
 
-	m_socket->write(block);
-	m_input->setText("");
+	server->write(block);
 }
 
 void MyClient::slotConnected() {
-	m_info->append("Received the connectied() signal");
+	Telemetry* telemetry = new Telemetry(m_socket, 1, 2, 0, 100);
+
+	connect(m_socket, SIGNAL(disconnected()),
+            telemetry, SLOT(slotStop()));
+    connect(telemetry, SIGNAL(signalSend(QTcpSocket*, const QString&)),
+            this, SLOT(slotSendToServerInfo(QTcpSocket*, const QString&)));
+	
+	telemetry->start();
 }

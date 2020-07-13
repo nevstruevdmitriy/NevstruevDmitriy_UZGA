@@ -1,6 +1,10 @@
 #include <server.h>
 
 #include <QApplication>
+#include <thread>
+#include <chrono>
+#include <string>
+#include <functional>
 
 int main(int argc, char** argv) {
 	QApplication app(argc, argv);

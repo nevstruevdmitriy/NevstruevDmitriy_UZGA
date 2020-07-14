@@ -5,6 +5,9 @@
 
 #include <stdlib.h>
 
+// number of arguments must be three:
+// second argument is host
+// third argument is port;
 int main(int argc, char** argv) {
 	QString host = "localhost";
 	int port = 2323;

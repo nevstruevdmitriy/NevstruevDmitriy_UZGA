@@ -35,6 +35,7 @@ MyServer::MyServer(int port, QWidget* parent) : QWidget(parent),
 
 void MyServer::slotNewConnection() {
 	QTcpSocket* client = m_server->nextPendingConnection();
+	// start ind = 2, step for ind = 2, wait time = 50, time step = 100
 	Telemetry* telemetry = new Telemetry(client, 2, 2, 50, 100);	
 	QVBoxLayout* new_client = new QVBoxLayout;
 	QTextEdit* new_messages = new QTextEdit;
@@ -53,8 +54,6 @@ void MyServer::slotNewConnection() {
 	connect(client, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(slotError(QAbstractSocket::SocketError)));
 
-	telemetry->start();
-
 	slotSendToClient(client, clientName);
 
 	new_messages->setReadOnly(true);
@@ -70,6 +69,8 @@ void MyServer::slotNewConnection() {
 	
 	m_messages.push_back(new_messages);
 	m_telemetries.push_back(new_telemetries);
+
+	telemetry->start();
 }
 
 void MyServer::slotReadClient() {
@@ -125,8 +126,12 @@ void MyServer::slotSendToClient(QTcpSocket* client, const QString& message) {
 
 	QDataStream out(&block, QIODevice::WriteOnly);
 	out.setVersion(QDataStream::Qt_4_2);
+	
+	// send the block: 
+	// (quint16)size_block + (QString)message + (block)Hash
 	out << quint16(0) << message << getHash(message.toLocal8Bit());
 
+	// to move cursor to start and replacing size_block
 	out.device()->seek(0);
 
 	out << quint16(block.size() - sizeof(quint16));
@@ -149,6 +154,7 @@ void MyServer::slotError(QAbstractSocket::SocketError error) {
 	m_messages[m_clientToNumber[client]]->append(strError);
 }
 
+// name of client is "ClientX"
 QString MyServer::numberToName(int ind) {
 	return ("Client" + std::to_string(ind)).c_str();
 }

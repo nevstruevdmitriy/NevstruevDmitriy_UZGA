@@ -14,6 +14,10 @@
 class MyServer : public QWidget {
 Q_OBJECT
 public:
+   /**
+	* @param port - integer, port for connecting
+	* @param parent - parent widget. If you use it like submodule
+	*/
 	MyServer(int port, QWidget* parent = 0);
 	~MyServer() override = default;
 

@@ -27,6 +27,7 @@ MyClient::MyClient(const QString& host, int port, QWidget* parrent) : QWidget(pa
 
 	m_info->setReadOnly(true);
 
+	// until the name is received
 	m_label = new QLabel("<H1>Connecting...</H1>");
 
 	QVBoxLayout* layout = new QVBoxLayout;
@@ -63,6 +64,8 @@ void MyClient::slotReadyRead() {
 		m_info->append("From server:\t" + message);
 		m_nextBlockSize = 0;
 		
+		// if message is name of client ;)
+		// this is little crutch
 		if (message[0] == 'C') {
 			m_label->setText("<H1>" + message + "</H1>");
 		}
@@ -83,11 +86,13 @@ void MyClient::slotError(QAbstractSocket::SocketError error) {
 	m_info->append(strError);
 }
 
+// if message from the input line
 void MyClient::slotSendToServerMessage() {
 	sendToServer(m_input->text(), true);
 	m_input->setText("");	
 }
 
+// if message was generated
 void MyClient::slotSendToServerInfo(QTcpSocket*, const QString& message) {
 	sendToServer(message, false);
 }
@@ -97,12 +102,15 @@ void MyClient::sendToServer(const QString& message, bool isMessage) {
 	QDataStream out(&block, QIODevice::WriteOnly);
 	out.setVersion(QDataStream::Qt_4_2);
 
+	// send the block: 
+	// (quint16)size_block + (bool)isMessage + (QString)message + (block)Hash
 	out << quint16(0) << isMessage << message;
 	if (isMessage) {
 		out << QDateTime::currentDateTime();
 	}
 	out << getHash(message.toLocal8Bit());
 
+	// to move cursor to start and replacing size_block
 	out.device()->seek(0);
 
 	out << quint16(block.size() - sizeof(quint16));
@@ -113,6 +121,7 @@ void MyClient::sendToServer(const QString& message, bool isMessage) {
 }
 
 void MyClient::slotConnected() {
+	// start ind = 1, step for ind = 2, time step = 100
 	Telemetry* telemetry = new Telemetry(m_socket, 1, 2, 0, 100);
 
 	connect(m_socket, SIGNAL(disconnected()),
@@ -120,6 +129,7 @@ void MyClient::slotConnected() {
     connect(telemetry, SIGNAL(signalSend(QTcpSocket*, const QString&)),
             this, SLOT(slotSendToServerInfo(QTcpSocket*, const QString&)));
 	
+	// then connected to server, strart generate message
 	telemetry->start();
 }
 

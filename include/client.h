@@ -10,6 +10,11 @@
 class MyClient : public QWidget {
 Q_OBJECT
 public:
+   /**
+    * @param host - QString, host for connecting
+	* @param port - integer, port for connecting
+	* @param parent - parent widget. parent widget. If you use it like submodule
+	*/
 	MyClient(const QString& host, int port, QWidget* parent = 0);
 	~MyClient() override = default;
 
